@@ -23,6 +23,5 @@
     "@typescript-eslint/no-var-requires": "off",
     "no-case-declarations": "off",
     "eqeqeq": "error"
-  },
-  "ignorePatterns": ["src/types/generated/*", "src/**/_generated/**/*"]
+  }
 }

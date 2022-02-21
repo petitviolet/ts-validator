@@ -1,2 +1,3 @@
-import { validate, mergeValidationResults } from './tsValidator'
-export * from './tsValidator'
+export { validate } from './validate'
+export { mergeValidationResults } from './mergeValidationResults'
+export * from './types'
