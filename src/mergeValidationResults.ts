@@ -1,4 +1,4 @@
-import type { FixedValidationResult, ValidationErrors } from './types'
+import type { FixedValidationResult, ValidationErrors } from './@types'
 
 export const mergeValidationResults = <T>(results: FixedValidationResult<any>[]): FixedValidationResult<T> => {
   const errors = results.reduce<ValidationErrors<T>>((errors, result) => {
