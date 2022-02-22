@@ -1,5 +1,5 @@
 {
-  "name": "ts-validator",
+  "name": "@petitviolet/ts-validator",
   "version": "0.1.0",
   "description": "TypeScript validator",
   "main": "dist/index.js",
