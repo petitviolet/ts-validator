@@ -17,6 +17,7 @@ type Param = {
   age: number
 }
 
+// run sync/async validations on given arguments
 const result = validate(
   {
     name: 'bob',
@@ -26,11 +27,11 @@ const result = validate(
   {
     name: [
       [name => name.length > 0, 'must not be empty'],
-      [name => sleep(1).then(() => !['bob', 'charlie'].includes(name)), 'must be unique'],
+      [async name => userRepository.findByName(name) !== null, 'must be unique'],
     ],
     email: [
       [email => /^.+@.+$/i.test(email), 'must be in email format'],
-      [email => sleep(1).then(() => !['bob@example.com', 'charlie@example.com'].includes(email)), 'is already taken'],
+      [async email => userRepository.findByEmail(email) !== null, 'is already taken'],
     ],
     age: [
       [age => age > 0 && age < 120, 'must be between 0 and 120'],
