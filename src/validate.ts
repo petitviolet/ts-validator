@@ -1,29 +1,16 @@
 import { rejectNullable } from './rejectNullable'
 import type { FixedValidationResult, Sync, ValidationErrors, ValidationResult, Validators } from './@types'
 
-// I'm not sure how to merge sync/async implementations...
+// Looking for a way to merge sync/async implementations...
 
 export const validateSync = <P>(param: P | P[], validators: Validators<P, Sync<boolean>>): FixedValidationResult<P> => {
   const errors: { key: keyof P; errors: string[] }[] = (Array.isArray(param) ? param : [param])
     .flatMap(param => {
       return (Object.keys(param) as Readonly<keyof P>[]).map((key: keyof P) => {
         const value = param[key]
-        const validator = validators[key]
-        if (!validator) {
-          return undefined
-        }
-        let validatorFuncs: [(v: typeof value) => boolean, string][]
-        if ('allowNullable' in validator) {
-          if (!value) {
-            if (validator.allowNullable) {
-              return undefined
-            } else {
-              return { key, errors: ['must not be nullable'] }
-            }
-          }
-          validatorFuncs = validator.funcs as typeof validatorFuncs
-        } else {
-          validatorFuncs = validator
+        const validatorFuncs = getValidatorFuncs(key, value, validators[key])
+        if (!Array.isArray(validatorFuncs)) {
+          return validatorFuncs
         }
         const errors: string[] = validatorFuncs
           .map(([func, errorMessage]) => {
@@ -40,14 +27,8 @@ export const validateSync = <P>(param: P | P[], validators: Validators<P, Sync<b
       })
     })
     .filter(rejectNullable)
-  const aggregated = errors.reduce<ValidationErrors<P>>((acc, { key, errors }) => {
-    return { ...acc, [key]: errors }
-  }, {})
 
-  if (Object.values(aggregated).length > 0) {
-    return { valid: false, errors: aggregated }
-  }
-  return { valid: true }
+  return aggregate(errors)
 }
 
 export const validate = async <P>(param: P | P[], validators: Validators<P, Sync<boolean> | Promise<boolean>>): ValidationResult<P> => {
@@ -56,22 +37,9 @@ export const validate = async <P>(param: P | P[], validators: Validators<P, Sync
       (Array.isArray(param) ? param : [param]).flatMap(param => {
         return (Object.keys(param) as Readonly<keyof P>[]).map(async (key: keyof P) => {
           const value = param[key]
-          const validator = validators[key]
-          if (!validator) {
-            return undefined
-          }
-          let validatorFuncs: [(v: typeof value) => boolean | Promise<boolean>, string][]
-          if ('allowNullable' in validator) {
-            if (!value) {
-              if (validator.allowNullable) {
-                return undefined
-              } else {
-                return { key, errors: ['must not be nullable'] }
-              }
-            }
-            validatorFuncs = validator.funcs as typeof validatorFuncs // to cast T to NoNullable<T>
-          } else {
-            validatorFuncs = validator // as typeof validatorFuncs
+          const validatorFuncs = getValidatorFuncs(key, value, validators[key])
+          if (!Array.isArray(validatorFuncs)) {
+            return validatorFuncs
           }
           const errors: string[] = (
             await Promise.all(
@@ -91,6 +59,10 @@ export const validate = async <P>(param: P | P[], validators: Validators<P, Sync
       })
     )
   ).filter(rejectNullable)
+  return aggregate(errors)
+}
+
+const aggregate = <P>(errors: { key: keyof P; errors: string[] }[]): { valid: true } | { valid: false; errors: ValidationErrors<P> } => {
   const aggregated = errors.reduce<ValidationErrors<P>>((acc, { key, errors }) => {
     return { ...acc, [key]: errors }
   }, {})
@@ -99,4 +71,28 @@ export const validate = async <P>(param: P | P[], validators: Validators<P, Sync
     return { valid: false, errors: aggregated }
   }
   return { valid: true }
+}
+
+const getValidatorFuncs = <P>(
+  key: keyof P,
+  value: P[keyof P],
+  validator: Validators<P, Sync<boolean> | Promise<boolean>>[keyof P] | undefined
+): undefined | { key: keyof P; errors: string[] } | [(v: typeof value) => boolean | Promise<boolean>, string][] => {
+  if (!validator) {
+    return undefined
+  }
+  let validatorFuncs: [(v: typeof value) => boolean | Promise<boolean>, string][]
+  if ('allowNullable' in validator) {
+    if (!value) {
+      if (validator.allowNullable) {
+        return undefined
+      } else {
+        return { key, errors: ['must not be nullable'] }
+      }
+    }
+    validatorFuncs = validator.funcs as typeof validatorFuncs // to cast T to NoNullable<T>
+  } else {
+    validatorFuncs = validator // as typeof validatorFuncs
+  }
+  return validatorFuncs
 }
