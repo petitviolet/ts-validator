@@ -2,6 +2,8 @@
 
 ## Installation
 
+[![npm version](https://badge.fury.io/js/@petitviolet%2Fts-validator.svg)](https://badge.fury.io/js/@petitviolet%2Fts-validator)
+
 ```
 $ npm i @petitviolet/ts-validator
 ```
