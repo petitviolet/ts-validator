@@ -25,13 +25,13 @@ const result = validate(
     age: 120,
   },
   {
-    name: [
+    name: [ // array of validators(name => boolean | Promise<boolean> return true if valid)
       [name => name.length > 0, 'must not be empty'],
-      [async name => userRepository.findByName(name) !== null, 'must be unique'],
+      [async name => userRepository.findByName(name) === null, 'must be unique'],
     ],
     email: [
       [email => /^.+@.+$/i.test(email), 'must be in email format'],
-      [async email => userRepository.findByEmail(email) !== null, 'is already taken'],
+      [async email => userRepository.findByEmail(email) === null, 'is already taken'],
     ],
     age: [
       [age => age > 0 && age < 120, 'must be between 0 and 120'],
